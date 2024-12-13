@@ -1,3 +1,4 @@
+// Package logger provides a slog.Handler that writes log records to a golog.Logger.
 package logger
 
 import (
@@ -20,6 +21,7 @@ type slogHandler struct {
 	groups   []string
 }
 
+// NewLogHandler returns a new slog.Handler that writes log records to the given golog.Logger.
 func NewLogHandler(logger golog.Logger, prefix string) *slogHandler {
 	return &slogHandler{logger: logger, prefix: prefix}
 }
