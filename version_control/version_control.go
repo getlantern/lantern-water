@@ -1,3 +1,4 @@
+// Package version_control provides a version control system for the WASM files
 package version_control
 
 import (
@@ -27,6 +28,8 @@ type wasmInfo struct {
 	path           string
 }
 
+// NewWaterVersionControl creates a new instance of the version control system.
+// It requires a directory where the WASM files will be stored and a logger.
 func NewWaterVersionControl(dir string, logger golog.Logger) *waterVersionControl {
 	return &waterVersionControl{
 		dir:    dir,
@@ -34,15 +37,16 @@ func NewWaterVersionControl(dir string, logger golog.Logger) *waterVersionContro
 	}
 }
 
-// GetWASM returns the WASM file for the given transport
-// Remember to Close the io.ReadCloser after using it
+// GetWASM returns the WASM file for the given transport.
+// Please remember to Close the io.ReadCloser after using it.
+// This function implements the following steps:
+// 1. Check if the WASM file exists
+// 2. If it does not exist, download it
+// 3. If it exists, check if it was loaded correctly by checking if the last-loaded file exists
+// 4. If it was not loaded correctly or the last-loaded file doesn't exist, download it again
+// 5. If it was loaded correctly, return the file and mark the file as loaded
+// 6. It deletes the WASM files that were not used for more than 7 days after successful loading
 func (vc *waterVersionControl) GetWASM(ctx context.Context, transport string, downloader downloader.WASMDownloader) (io.ReadCloser, error) {
-	// This function implements the following steps:
-	// 1. Check if the WASM file exists
-	// 2. If it does not exist, download it
-	// 3. If it exists, check if it was loaded correctly by checking if the last-loaded file existis
-	// 4. If it was not loaded correctly, download it again
-	// 5. If it was loaded correctly, return the file and mark the file as loaded
 	path := filepath.Join(vc.dir, transport+".wasm")
 	f, err := os.Open(path)
 	if err != nil && !os.IsNotExist(err) {
@@ -87,8 +91,7 @@ func (vc *waterVersionControl) GetWASM(ctx context.Context, transport string, do
 	return f, nil
 }
 
-// Commit will update the history of the last time the WASM file was loaded
-// and delete the outdated WASM files
+// markUsed updates the last-loaded file for the given transport
 func (vc *waterVersionControl) markUsed(transport string) error {
 	f, err := os.Create(filepath.Join(vc.dir, transport+".last-loaded"))
 	if err != nil {
