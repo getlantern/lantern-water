@@ -1,3 +1,5 @@
+// Package downloader provides a WASM downloader that can download the WASM
+// file from a given URL. The downloader supports both HTTPS URLs and magnet links.
 package downloader
 
 import (
@@ -12,6 +14,7 @@ import (
 //go:generate mockgen -package=downloader -destination=mocks_test.go . WASMDownloader,torrentClient,torrentInfo
 //go:generate mockgen -package=downloader -destination=torrent_reader_mock_test.go github.com/anacrolix/torrent Reader
 
+// WASMDownloader is an interface that defines the methods that a WASM downloader
 type WASMDownloader interface {
 	DownloadWASM(context.Context, io.Writer) error
 	Close() error

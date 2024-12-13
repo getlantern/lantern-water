@@ -16,10 +16,13 @@ func newHTTPSDownloader(client *http.Client, url string) WASMDownloader {
 	return &httpsDownloader{cli: client, url: url}
 }
 
+// Close for httpsDownloader does nothing.
 func (d *httpsDownloader) Close() error {
 	return nil
 }
 
+// DownloadWASM downloads the WASM file from the given URL and writes it to the
+// given writer.
 func (d *httpsDownloader) DownloadWASM(ctx context.Context, w io.Writer) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, d.url, http.NoBody)
 	if err != nil {

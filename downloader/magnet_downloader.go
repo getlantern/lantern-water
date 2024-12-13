@@ -34,6 +34,7 @@ func newMagnetDownloader(ctx context.Context, magnetURL string) (WASMDownloader,
 	}, nil
 }
 
+// Close for magnetDownloader closes the torrent client.
 func (d *magnetDownloader) Close() error {
 	errs := d.client.Close()
 	closeErr := errors.New("failed to close torrent client")
@@ -56,10 +57,12 @@ func newTorrentCliWrapper(client *torrent.Client) *torrentCliWrapper {
 	}
 }
 
+// AddMagnet for torrentCliWrapper adds a magnet URL to the torrent client.
 func (t *torrentCliWrapper) AddMagnet(magnetURL string) (torrentInfo, error) {
 	return t.client.AddMagnet(magnetURL)
 }
 
+// Close for torrentCliWrapper closes the torrent client.
 func (t *torrentCliWrapper) Close() []error {
 	return t.client.Close()
 }
