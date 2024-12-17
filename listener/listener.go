@@ -9,6 +9,7 @@ import (
 	"github.com/getlantern/golog"
 	"github.com/getlantern/lantern-water/logger"
 	"github.com/refraction-networking/water"
+	_ "github.com/refraction-networking/water/transport/v1"
 )
 
 // ListenerParams contain arguments/parameters used for creating a new WATER listener
