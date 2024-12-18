@@ -1,6 +1,6 @@
 module github.com/getlantern/lantern-water
 
-go 1.22.9
+go 1.22.4
 
 require (
 	github.com/anacrolix/chansync v0.3.0
