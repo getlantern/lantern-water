@@ -19,7 +19,6 @@ func main() {
 	ctx := context.Background()
 	log := slog.New(slog.NewTextHandler(os.Stdin, nil))
 
-	// {"mismatch_protocol":"PROTOCOL_UNSPECIFIED","port":"80","transport":"water_plain_v1","wasm_available_at":"https://github.com/getlantern/watm/releases/download/0.0.1/plain.v1.tinygo.wasm"}
 	var listenAddr, wasmAvailableAt, transportName string
 	flag.StringVar(&listenAddr, "proxyURL", "localhost:8080", "URL of the proxy")
 	flag.StringVar(&wasmAvailableAt, "wasmAvailableAt", "https://github.com/getlantern/watm/releases/download/0.0.1/plain.v1.tinygo.wasm", "URL where the WASM is available")
