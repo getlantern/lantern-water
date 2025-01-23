@@ -21,7 +21,7 @@ func main() {
 
 	var listenAddr, wasmAvailableAt, transportName string
 	flag.StringVar(&listenAddr, "proxyURL", "localhost:8080", "URL of the proxy")
-	flag.StringVar(&wasmAvailableAt, "wasmAvailableAt", "https://github.com/getlantern/watm/releases/download/0.0.1/plain.v1.tinygo.wasm", "URL where the WASM is available")
+	flag.StringVar(&wasmAvailableAt, "wasmAvailableAt", "https://github.com/getlantern/wateringhole/raw/716a062ffa977fb4004d17827d46bc401265e2ac/protocols/plain/v1.0.0/plain.wasm", "URL where the WASM is available")
 	flag.StringVar(&transportName, "transport", "plain", "Transport to use")
 	flag.Parse()
 
