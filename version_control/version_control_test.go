@@ -3,6 +3,7 @@ package version_control
 import (
 	"context"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/getlantern/golog"
 	"github.com/getlantern/lantern-water/downloader"
+	"github.com/getlantern/lantern-water/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	gomock "go.uber.org/mock/gomock"
@@ -110,14 +112,15 @@ func TestNewWaterVersionControl(t *testing.T) {
 			dir, err := os.MkdirTemp("", "water")
 			require.NoError(t, err)
 			defer os.RemoveAll(dir)
+			transport := "test"
 
 			downloader := tt.setup(t, gomock.NewController(t), dir)
-			vc := NewWaterVersionControl(dir, golog.LoggerFor("version_control_test"))
+			vc := NewWaterVersionControl(dir, slog.New(logger.NewLogHandler(golog.LoggerFor("version_control_test"), transport)))
 			require.NotNil(t, vc)
 			require.NotEmpty(t, vc.dir)
 
 			ctx := context.Background()
-			r, err := vc.GetWASM(ctx, "test", downloader)
+			r, err := vc.GetWASM(ctx, transport, downloader)
 
 			tt.assert(t, dir, r, err)
 		})

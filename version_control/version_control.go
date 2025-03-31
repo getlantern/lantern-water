@@ -20,7 +20,7 @@ import (
 
 type waterVersionControl struct {
 	dir    string
-	logger slog.Logger
+	logger *slog.Logger
 }
 
 type wasmInfo struct {
@@ -30,7 +30,7 @@ type wasmInfo struct {
 
 // NewWaterVersionControl creates a new instance of the version control system.
 // It requires a directory where the WASM files will be stored and a logger.
-func NewWaterVersionControl(dir string, logger slog.Logger) *waterVersionControl {
+func NewWaterVersionControl(dir string, logger *slog.Logger) *waterVersionControl {
 	return &waterVersionControl{
 		dir:    dir,
 		logger: logger,
