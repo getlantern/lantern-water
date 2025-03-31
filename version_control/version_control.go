@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -14,13 +15,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/getlantern/golog"
 	"github.com/getlantern/lantern-water/downloader"
 )
 
 type waterVersionControl struct {
 	dir    string
-	logger golog.Logger
+	logger slog.Logger
 }
 
 type wasmInfo struct {
@@ -30,7 +30,7 @@ type wasmInfo struct {
 
 // NewWaterVersionControl creates a new instance of the version control system.
 // It requires a directory where the WASM files will be stored and a logger.
-func NewWaterVersionControl(dir string, logger golog.Logger) *waterVersionControl {
+func NewWaterVersionControl(dir string, logger slog.Logger) *waterVersionControl {
 	return &waterVersionControl{
 		dir:    dir,
 		logger: logger,
@@ -148,11 +148,11 @@ func (vc *waterVersionControl) cleanOutdated() error {
 			defer wg.Done()
 			transport := strings.TrimSuffix(filepath.Base(path), ".last-loaded")
 			if err = os.Remove(filepath.Join(vc.dir, transport+".wasm")); err != nil {
-				vc.logger.Errorf("failed to remove wasm file %s: %w", transport+".wasm", err)
+				vc.logger.Error("failed to remove wasm file", slog.String("file", transport+".wasm"), slog.Any("err", err))
 				return
 			}
 			if err = os.Remove(path); err != nil {
-				vc.logger.Errorf("failed to remove last-loaded file %s: %w", path, err)
+				vc.logger.Error("failed to remove last-loaded file", slog.String("path", path), slog.Any("err", err))
 				return
 			}
 		}()
