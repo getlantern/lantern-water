@@ -13,6 +13,7 @@ import (
 	"github.com/getlantern/golog"
 	"github.com/getlantern/lantern-water/dialer"
 	waterDownloader "github.com/getlantern/lantern-water/downloader"
+	"github.com/getlantern/lantern-water/logger"
 	waterVC "github.com/getlantern/lantern-water/version_control"
 
 	_ "github.com/refraction-networking/water/transport/v1"
@@ -34,7 +35,7 @@ func main() {
 		return
 	}
 
-	vc := waterVC.NewWaterVersionControl(storageDir, golog.LoggerFor("water-vc"))
+	vc := waterVC.NewWaterVersionControl(storageDir, slog.New(logger.NewLogHandler(golog.LoggerFor("water-vc"), transportName)))
 
 	// Client for downloading WASM file
 	cli := &http.Client{
