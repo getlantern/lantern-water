@@ -3,6 +3,8 @@ package downloader
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"fmt"
 	"io"
 	"net/http"
 	"testing"
@@ -13,14 +15,26 @@ import (
 )
 
 func TestNewWASMDownloader(t *testing.T) {
+	hashsum := "hashsum"
+	client := http.DefaultClient
+	urls := []string{"http://example.com"}
 	var tests = []struct {
 		name            string
+		givenHashSum    string
 		givenURLs       []string
 		givenHTTPClient *http.Client
 		assert          func(*testing.T, WASMDownloader, error)
 	}{
 		{
-			name: "it should return an error when providing an empty list of URLs",
+			name: "it should return an error when providing an empty hash sum",
+			assert: func(t *testing.T, d WASMDownloader, err error) {
+				assert.Error(t, err)
+				assert.Nil(t, d)
+			},
+		},
+		{
+			name:         "it should return an error when providing an empty list of URLs",
+			givenHashSum: hashsum,
 			assert: func(t *testing.T, d WASMDownloader, err error) {
 				assert.Error(t, err)
 				assert.Nil(t, d)
@@ -28,19 +42,21 @@ func TestNewWASMDownloader(t *testing.T) {
 		},
 		{
 			name:            "it should successfully return a wasm downloader",
-			givenURLs:       []string{"http://example.com"},
-			givenHTTPClient: http.DefaultClient,
+			givenHashSum:    hashsum,
+			givenURLs:       urls,
+			givenHTTPClient: client,
 			assert: func(t *testing.T, wDownloader WASMDownloader, err error) {
 				assert.NoError(t, err)
 				d := wDownloader.(*downloader)
-				assert.Equal(t, []string{"http://example.com"}, d.urls)
-				assert.Equal(t, http.DefaultClient, d.httpClient)
+				assert.Equal(t, hashsum, d.expectedHashSum)
+				assert.Equal(t, urls, d.urls)
+				assert.Equal(t, client, d.httpClient)
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d, err := NewWASMDownloader(tt.givenURLs, tt.givenHTTPClient)
+			d, err := NewWASMDownloader(tt.givenHashSum, tt.givenURLs, tt.givenHTTPClient)
 			tt.assert(t, d, err)
 		})
 	}
@@ -50,8 +66,10 @@ func TestDownloadWASM(t *testing.T) {
 	ctx := context.Background()
 
 	contentMessage := "content"
+	hashsum := fmt.Sprintf("%x", sha256.Sum256([]byte(contentMessage)))
 	var tests = []struct {
 		name                string
+		givenHashSum        string
 		givenHTTPClient     *http.Client
 		givenURLs           []string
 		givenWriter         io.Writer
@@ -59,7 +77,8 @@ func TestDownloadWASM(t *testing.T) {
 		assert              func(*testing.T, io.Reader, error)
 	}{
 		{
-			name: "udp urls are unsupported",
+			name:         "udp urls are unsupported",
+			givenHashSum: hashsum,
 			givenURLs: []string{
 				"udp://example.com",
 			},
@@ -72,7 +91,8 @@ func TestDownloadWASM(t *testing.T) {
 			},
 		},
 		{
-			name: "http download error",
+			name:         "http download error",
+			givenHashSum: hashsum,
 			givenURLs: []string{
 				"http://example.com",
 			},
@@ -91,7 +111,8 @@ func TestDownloadWASM(t *testing.T) {
 			},
 		},
 		{
-			name: "success",
+			name:         "success",
+			givenHashSum: hashsum,
 			givenURLs: []string{
 				"http://example.com",
 			},
@@ -122,7 +143,7 @@ func TestDownloadWASM(t *testing.T) {
 			}
 
 			b := &bytes.Buffer{}
-			d, err := NewWASMDownloader(tt.givenURLs, tt.givenHTTPClient)
+			d, err := NewWASMDownloader(tt.givenHashSum, tt.givenURLs, tt.givenHTTPClient)
 			require.NoError(t, err)
 
 			if httpDownloader != nil {

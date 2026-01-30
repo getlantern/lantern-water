@@ -3,7 +3,9 @@
 package downloader
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io"
@@ -21,20 +23,25 @@ type WASMDownloader interface {
 }
 
 type downloader struct {
+	expectedHashSum  string
 	urls             []string
 	httpClient       *http.Client
 	httpDownloader   WASMDownloader
 	magnetDownloader WASMDownloader
 }
 
-// NewWaterWASMDownloader creates a new WASMDownloader instance.
-func NewWASMDownloader(urls []string, httpClient *http.Client) (WASMDownloader, error) {
+// NewWASMDownloader creates a new WASMDownloader instance.
+func NewWASMDownloader(hashsum string, urls []string, httpClient *http.Client) (WASMDownloader, error) {
+	if hashsum == "" {
+		return nil, fmt.Errorf("missing required hashsum")
+	}
 	if len(urls) == 0 {
 		return nil, fmt.Errorf("WASM downloader requires URLs to download but received empty list")
 	}
 	return &downloader{
-		urls:       urls,
-		httpClient: httpClient,
+		urls:            urls,
+		httpClient:      httpClient,
+		expectedHashSum: hashsum,
 	}, nil
 }
 
@@ -50,12 +57,21 @@ func (d *downloader) Close() error {
 func (d *downloader) DownloadWASM(ctx context.Context, w io.Writer) error {
 	joinedErrs := errors.New("failed to download WASM from all URLs")
 	for _, url := range d.urls {
-		err := d.downloadWASM(ctx, w, url)
-		if err != nil {
+		tempBuffer := &bytes.Buffer{}
+		if err := d.downloadWASM(ctx, tempBuffer, url); err != nil {
 			joinedErrs = errors.Join(joinedErrs, err)
 			continue
 		}
 
+		if err := d.verifyHashSum(tempBuffer.Bytes()); err != nil {
+			joinedErrs = errors.Join(joinedErrs, err)
+			continue
+		}
+
+		if _, err := tempBuffer.WriteTo(w); err != nil {
+			joinedErrs = errors.Join(joinedErrs, err)
+			continue
+		}
 		return nil
 	}
 	return joinedErrs
@@ -83,4 +99,11 @@ func (d *downloader) downloadWASM(ctx context.Context, w io.Writer, url string) 
 	default:
 		return fmt.Errorf("unsupported protocol: %s", url)
 	}
+}
+
+func (d *downloader) verifyHashSum(data []byte) error {
+	if d.expectedHashSum != fmt.Sprintf("%x", sha256.Sum256(data)) {
+		return fmt.Errorf("failed to verify hash sum")
+	}
+	return nil
 }
