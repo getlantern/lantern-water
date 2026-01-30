@@ -11,7 +11,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	gomock "go.uber.org/mock/gomock"
 )
 
 func TestNewWASMDownloader(t *testing.T) {
@@ -68,13 +67,12 @@ func TestDownloadWASM(t *testing.T) {
 	contentMessage := "content"
 	hashsum := fmt.Sprintf("%x", sha256.Sum256([]byte(contentMessage)))
 	var tests = []struct {
-		name                string
-		givenHashSum        string
-		givenHTTPClient     *http.Client
-		givenURLs           []string
-		givenWriter         io.Writer
-		setupHTTPDownloader func(ctrl *gomock.Controller) WASMDownloader
-		assert              func(*testing.T, io.Reader, error)
+		name            string
+		givenHashSum    string
+		givenHTTPClient *http.Client
+		givenURLs       []string
+		givenWriter     io.Writer
+		assert          func(*testing.T, io.Reader, error)
 	}{
 		{
 			name:         "udp urls are unsupported",
@@ -96,10 +94,12 @@ func TestDownloadWASM(t *testing.T) {
 			givenURLs: []string{
 				"http://example.com",
 			},
-			setupHTTPDownloader: func(ctrl *gomock.Controller) WASMDownloader {
-				httpDownloader := NewMockWASMDownloader(ctrl)
-				httpDownloader.EXPECT().DownloadWASM(ctx, gomock.Any()).Return(assert.AnError)
-				return httpDownloader
+			givenHTTPClient: &http.Client{
+				Transport: &roundTripFunc{
+					f: func(req *http.Request) (*http.Response, error) {
+						return nil, assert.AnError
+					},
+				},
 			},
 			assert: func(t *testing.T, r io.Reader, err error) {
 				b, berr := io.ReadAll(r)
@@ -111,19 +111,43 @@ func TestDownloadWASM(t *testing.T) {
 			},
 		},
 		{
+			name:         "should return an error if hashsum fail",
+			givenHashSum: "invalid",
+			givenURLs: []string{
+				"http://example.com",
+			},
+			givenHTTPClient: &http.Client{
+				Transport: &roundTripFunc{
+					f: func(req *http.Request) (*http.Response, error) {
+						return &http.Response{
+							StatusCode: http.StatusOK,
+							Body:       io.NopCloser(bytes.NewBufferString(contentMessage)),
+						}, nil
+					},
+				},
+			},
+			assert: func(t *testing.T, r io.Reader, err error) {
+				b, berr := io.ReadAll(r)
+				require.NoError(t, berr)
+				assert.Empty(t, b)
+				assert.Error(t, err)
+			},
+		},
+		{
 			name:         "success",
 			givenHashSum: hashsum,
 			givenURLs: []string{
 				"http://example.com",
 			},
-			setupHTTPDownloader: func(ctrl *gomock.Controller) WASMDownloader {
-				httpDownloader := NewMockWASMDownloader(ctrl)
-				httpDownloader.EXPECT().DownloadWASM(ctx, gomock.Any()).DoAndReturn(
-					func(ctx context.Context, w io.Writer) error {
-						_, err := w.Write([]byte(contentMessage))
-						return err
-					})
-				return httpDownloader
+			givenHTTPClient: &http.Client{
+				Transport: &roundTripFunc{
+					f: func(req *http.Request) (*http.Response, error) {
+						return &http.Response{
+							StatusCode: http.StatusOK,
+							Body:       io.NopCloser(bytes.NewBufferString(contentMessage)),
+						}, nil
+					},
+				},
 			},
 			assert: func(t *testing.T, r io.Reader, err error) {
 				b, berr := io.ReadAll(r)
@@ -135,20 +159,9 @@ func TestDownloadWASM(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var httpDownloader WASMDownloader
-			if tt.setupHTTPDownloader != nil {
-				ctrl := gomock.NewController(t)
-				defer ctrl.Finish()
-				httpDownloader = tt.setupHTTPDownloader(ctrl)
-			}
-
 			b := &bytes.Buffer{}
 			d, err := NewWASMDownloader(tt.givenHashSum, tt.givenURLs, tt.givenHTTPClient)
 			require.NoError(t, err)
-
-			if httpDownloader != nil {
-				d.(*downloader).httpDownloader = httpDownloader
-			}
 			err = d.DownloadWASM(ctx, b)
 			tt.assert(t, b, err)
 		})
