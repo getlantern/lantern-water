@@ -23,11 +23,9 @@ type WASMDownloader interface {
 }
 
 type downloader struct {
-	expectedHashSum  string
-	urls             []string
-	httpClient       *http.Client
-	httpDownloader   WASMDownloader
-	magnetDownloader WASMDownloader
+	expectedHashSum string
+	urls            []string
+	httpClient      *http.Client
 }
 
 // NewWASMDownloader creates a new WASMDownloader instance.
@@ -46,9 +44,6 @@ func NewWASMDownloader(hashsum string, urls []string, httpClient *http.Client) (
 }
 
 func (d *downloader) Close() error {
-	if d.magnetDownloader != nil {
-		return d.magnetDownloader.Close()
-	}
 	return nil
 }
 
@@ -82,20 +77,14 @@ func (d *downloader) DownloadWASM(ctx context.Context, w io.Writer) error {
 func (d *downloader) downloadWASM(ctx context.Context, w io.Writer, url string) error {
 	switch {
 	case strings.HasPrefix(url, "http://"), strings.HasPrefix(url, "https://"):
-		if d.httpDownloader == nil {
-			d.httpDownloader = newHTTPSDownloader(d.httpClient, url)
-		}
-		return d.httpDownloader.DownloadWASM(ctx, w)
+		return newHTTPSDownloader(d.httpClient, url).DownloadWASM(ctx, w)
 	case strings.HasPrefix(url, "magnet:?"):
-		if d.magnetDownloader == nil {
-			var err error
-			downloader, err := newMagnetDownloader(ctx, url)
-			if err != nil {
-				return err
-			}
-			d.magnetDownloader = downloader
+		downloader, err := newMagnetDownloader(ctx, url)
+		if err != nil {
+			return err
 		}
-		return d.magnetDownloader.DownloadWASM(ctx, w)
+		defer downloader.Close()
+		return downloader.DownloadWASM(ctx, w)
 	default:
 		return fmt.Errorf("unsupported protocol: %s", url)
 	}
