@@ -91,8 +91,9 @@ func (d *downloader) downloadWASM(ctx context.Context, w io.Writer, url string) 
 }
 
 func (d *downloader) verifyHashSum(data []byte) error {
-	if d.expectedHashSum != fmt.Sprintf("%x", sha256.Sum256(data)) {
-		return fmt.Errorf("failed to verify hash sum")
+	got := fmt.Sprintf("%x", sha256.Sum256(data))
+	if d.expectedHashSum != got {
+		return fmt.Errorf("hashsum verification failed, expected %s, but got %s", d.expectedHashSum, got)
 	}
 	return nil
 }
