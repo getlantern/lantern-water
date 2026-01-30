@@ -17,7 +17,7 @@ import (
 
 func main() {
 	ctx := context.Background()
-	log := slog.New(slog.NewTextHandler(os.Stdin, nil))
+	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	var listenAddr, wasmAvailableAt, transportName, hashsum string
 	flag.StringVar(&listenAddr, "proxyURL", "localhost:8080", "URL of the proxy")
