@@ -3,7 +3,9 @@
 package downloader
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io"
@@ -21,27 +23,27 @@ type WASMDownloader interface {
 }
 
 type downloader struct {
-	urls             []string
-	httpClient       *http.Client
-	httpDownloader   WASMDownloader
-	magnetDownloader WASMDownloader
+	expectedHashSum string
+	urls            []string
+	httpClient      *http.Client
 }
 
-// NewWaterWASMDownloader creates a new WASMDownloader instance.
-func NewWASMDownloader(urls []string, httpClient *http.Client) (WASMDownloader, error) {
+// NewWASMDownloader creates a new WASMDownloader instance.
+func NewWASMDownloader(hashsum string, urls []string, httpClient *http.Client) (WASMDownloader, error) {
+	if hashsum == "" {
+		return nil, fmt.Errorf("missing required hashsum")
+	}
 	if len(urls) == 0 {
 		return nil, fmt.Errorf("WASM downloader requires URLs to download but received empty list")
 	}
 	return &downloader{
-		urls:       urls,
-		httpClient: httpClient,
+		urls:            urls,
+		httpClient:      httpClient,
+		expectedHashSum: hashsum,
 	}, nil
 }
 
 func (d *downloader) Close() error {
-	if d.magnetDownloader != nil {
-		return d.magnetDownloader.Close()
-	}
 	return nil
 }
 
@@ -50,12 +52,21 @@ func (d *downloader) Close() error {
 func (d *downloader) DownloadWASM(ctx context.Context, w io.Writer) error {
 	joinedErrs := errors.New("failed to download WASM from all URLs")
 	for _, url := range d.urls {
-		err := d.downloadWASM(ctx, w, url)
-		if err != nil {
+		tempBuffer := &bytes.Buffer{}
+		if err := d.downloadWASM(ctx, tempBuffer, url); err != nil {
 			joinedErrs = errors.Join(joinedErrs, err)
 			continue
 		}
 
+		if err := d.verifyHashSum(tempBuffer.Bytes()); err != nil {
+			joinedErrs = errors.Join(joinedErrs, err)
+			continue
+		}
+
+		if _, err := tempBuffer.WriteTo(w); err != nil {
+			joinedErrs = errors.Join(joinedErrs, err)
+			continue
+		}
 		return nil
 	}
 	return joinedErrs
@@ -66,21 +77,23 @@ func (d *downloader) DownloadWASM(ctx context.Context, w io.Writer) error {
 func (d *downloader) downloadWASM(ctx context.Context, w io.Writer, url string) error {
 	switch {
 	case strings.HasPrefix(url, "http://"), strings.HasPrefix(url, "https://"):
-		if d.httpDownloader == nil {
-			d.httpDownloader = newHTTPSDownloader(d.httpClient, url)
-		}
-		return d.httpDownloader.DownloadWASM(ctx, w)
+		return newHTTPSDownloader(d.httpClient, url).DownloadWASM(ctx, w)
 	case strings.HasPrefix(url, "magnet:?"):
-		if d.magnetDownloader == nil {
-			var err error
-			downloader, err := newMagnetDownloader(ctx, url)
-			if err != nil {
-				return err
-			}
-			d.magnetDownloader = downloader
+		downloader, err := newMagnetDownloader(ctx, url)
+		if err != nil {
+			return err
 		}
-		return d.magnetDownloader.DownloadWASM(ctx, w)
+		defer downloader.Close()
+		return downloader.DownloadWASM(ctx, w)
 	default:
 		return fmt.Errorf("unsupported protocol: %s", url)
 	}
+}
+
+func (d *downloader) verifyHashSum(data []byte) error {
+	got := fmt.Sprintf("%x", sha256.Sum256(data))
+	if d.expectedHashSum != got {
+		return fmt.Errorf("hashsum verification failed, expected %s, but got %s", d.expectedHashSum, got)
+	}
+	return nil
 }

@@ -21,12 +21,13 @@ import (
 
 func main() {
 	ctx := context.Background()
-	log := slog.New(slog.NewTextHandler(os.Stdin, nil))
+	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
-	var listenerAddr, wasmAvailableAt, transportName string
+	var listenerAddr, wasmAvailableAt, transportName, hashsum string
 	flag.StringVar(&listenerAddr, "proxyURL", "localhost:8080", "URL of the proxy")
 	flag.StringVar(&wasmAvailableAt, "wasmAvailableAt", "https://github.com/getlantern/wateringhole/raw/716a062ffa977fb4004d17827d46bc401265e2ac/protocols/plain/v1.0.0/plain.wasm", "URL where the WASM is available")
 	flag.StringVar(&transportName, "transport", "plain", "Transport to use")
+	flag.StringVar(&hashsum, "hashsum", "b764e7ca6ea2d883d776f19600e1b263920488989f4f230ee195a56faea3b732", "Expected hash sum")
 	flag.Parse()
 
 	storageDir, err := os.MkdirTemp("", "lantern-water-example")
@@ -41,7 +42,7 @@ func main() {
 	cli := &http.Client{
 		Timeout: 600 * time.Second,
 	}
-	downloader, err := waterDownloader.NewWASMDownloader(strings.Split(wasmAvailableAt, ","), cli)
+	downloader, err := waterDownloader.NewWASMDownloader(hashsum, strings.Split(wasmAvailableAt, ","), cli)
 	if err != nil {
 		log.Error("failed to create wasm downloader", slog.Any("err", err))
 		return
