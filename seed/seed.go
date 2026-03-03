@@ -23,8 +23,8 @@ type Seeder struct {
 
 // New creates a Seeder for the file at filePath, begins seeding it, and
 // returns the Seeder alongside the generated magnet URI.
-func New(filePath string) (*Seeder, error) {
-	mi, err := buildMetainfo(filePath)
+func New(filePath string, announceList [][]string) (*Seeder, error) {
+	mi, err := buildMetainfo(filePath, announceList)
 	if err != nil {
 		return nil, fmt.Errorf("building metainfo: %w", err)
 	}
@@ -77,7 +77,7 @@ func (s *Seeder) Close() error {
 }
 
 // buildMetainfo creates a MetaInfo for the file at filePath.
-func buildMetainfo(filePath string) (*metainfo.MetaInfo, error) {
+func buildMetainfo(filePath string, announceList [][]string) (*metainfo.MetaInfo, error) {
 	info := metainfo.Info{
 		PieceLength: defaultPieceLength,
 	}
@@ -91,28 +91,8 @@ func buildMetainfo(filePath string) (*metainfo.MetaInfo, error) {
 	}
 
 	mi := &metainfo.MetaInfo{
-		InfoBytes: infoBytes,
-		AnnounceList: metainfo.AnnounceList{
-			{"udp://tracker.opentrackr.org:1337/announce"},
-			{"udp://open.demonii.com:1337/announce"},
-			{"udp://open.stealth.si:80/announce"},
-			{"udp://exodus.desync.com:6969/announce"},
-			{"https://torrent.tracker.durukanbal.com:443/announce"},
-			{"udp://tracker.torrent.eu.org:451/announce"},
-			{"udp://tracker.theoks.net:6969/announce"},
-			{"udp://tracker.srv00.com:6969/announce"},
-			{"udp://tracker.filemail.com:6969/announce"},
-			{"udp://tracker.dler.org:6969/announce"},
-			{"udp://tracker.corpscorp.online:80/announce"},
-			{"udp://tracker.alaskantf.com:6969/announce"},
-			{"udp://tracker-udp.gbitt.info:80/announce"},
-			{"udp://t.overflow.biz:6969/announce"},
-			{"udp://open.dstud.io:6969/announce"},
-			{"udp://leet-tracker.moe:1337/announce"},
-			{"udp://explodie.org:6969/announce"},
-			{"udp://bittorrent-tracker.e-n-c-r-y-p-t.net:1337/announce"},
-			{"udp://6ahddutb1ucc3cp.ru:6969/announce"},
-		},
+		InfoBytes:    infoBytes,
+		AnnounceList: metainfo.AnnounceList(announceList),
 	}
 	mi.SetDefaults()
 
