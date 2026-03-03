@@ -53,7 +53,10 @@ func New(filePath string, announceList [][]string) (*Seeder, error) {
 
 	t, err := client.AddTorrent(mi)
 	if err != nil {
-		client.Close()
+		if errs := client.Close(); errs != nil {
+			closeErr := errors.Join(errs...)
+			err = errors.Join(err, closeErr)
+		}
 		return nil, fmt.Errorf("adding torrent: %w", err)
 	}
 
