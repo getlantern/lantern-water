@@ -5,6 +5,7 @@ package seed
 import (
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/anacrolix/torrent"
@@ -35,7 +36,11 @@ func New(filePath string) (*Seeder, error) {
 	magnetURI := magnet.String()
 
 	cfg := torrent.NewDefaultClientConfig()
-	cfg.DataDir = filepath.Dir(filePath)
+	path, err := os.MkdirTemp("", "lantern-water-torrent")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create temp dir: %w", err)
+	}
+	cfg.DataDir = filepath.Dir(path)
 	cfg.Seed = true
 	cfg.NoDHT = false
 	cfg.NoUpload = false
