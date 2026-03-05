@@ -23,6 +23,8 @@ type Seeder struct {
 
 // New creates a Seeder for the file at filePath, begins seeding it, and
 // returns the Seeder alongside the generated magnet URI.
+// It uses the default options from anacrolix/torrent config and make sure
+// it enables seed options based on the announce list and enable DHT
 func New(filePath string, announceList [][]string) (*Seeder, error) {
 	mi, err := buildMetainfo(filePath, announceList)
 	if err != nil {
