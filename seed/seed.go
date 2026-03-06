@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/bencode"
@@ -42,7 +41,7 @@ func New(filePath string, announceList [][]string) (*Seeder, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create temp dir: %w", err)
 	}
-	cfg.DataDir = filepath.Dir(path)
+	cfg.DataDir = path
 	cfg.Seed = true
 	cfg.NoDHT = false
 	cfg.NoUpload = false
