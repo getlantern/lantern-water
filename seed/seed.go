@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/anacrolix/torrent"
 	"github.com/anacrolix/torrent/bencode"
@@ -37,7 +38,7 @@ func New(filePath string, announceList [][]string) (*Seeder, error) {
 	magnetURI := magnet.String()
 
 	cfg := torrent.NewDefaultClientConfig()
-	path, err := os.MkdirTemp("", "lantern-water-torrent")
+	path, err := os.MkdirTemp(filepath.Dir(filePath), "lantern-water-torrent")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create temp dir: %w", err)
 	}
