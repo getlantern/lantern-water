@@ -100,6 +100,18 @@ func (mr *MockReaderMockRecorder) Seek(offset, whence any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Seek", reflect.TypeOf((*MockReader)(nil).Seek), offset, whence)
 }
 
+// SetContext mocks base method.
+func (m *MockReader) SetContext(arg0 context.Context) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetContext", arg0)
+}
+
+// SetContext indicates an expected call of SetContext.
+func (mr *MockReaderMockRecorder) SetContext(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetContext", reflect.TypeOf((*MockReader)(nil).SetContext), arg0)
+}
+
 // SetReadahead mocks base method.
 func (m *MockReader) SetReadahead(arg0 int64) {
 	m.ctrl.T.Helper()

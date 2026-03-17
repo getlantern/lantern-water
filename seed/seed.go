@@ -5,6 +5,7 @@ package seed
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 
@@ -18,6 +19,7 @@ const defaultPieceLength = 256 * 1024 // 256 KiB
 // Seeder seeds a WASM file via BitTorrent.
 type Seeder struct {
 	client    *torrent.Client
+	dataDir   string
 	magnetURI string
 }
 
@@ -25,7 +27,7 @@ type Seeder struct {
 // returns the Seeder alongside the generated magnet URI.
 // It uses the default options from anacrolix/torrent config and make sure
 // it enables seed options based on the announce list and enable DHT
-func New(filePath string, announceList [][]string) (*Seeder, error) {
+func New(filePath string, announceList [][]string, httpClient *http.Client) (*Seeder, error) {
 	mi, err := buildMetainfo(filePath, announceList)
 	if err != nil {
 		return nil, fmt.Errorf("building metainfo: %w", err)
@@ -47,6 +49,9 @@ func New(filePath string, announceList [][]string) (*Seeder, error) {
 	cfg.NoDHT = false
 	cfg.NoUpload = false
 	cfg.AcceptPeerConnections = true
+	if httpClient != nil {
+		cfg.WebTransport = httpClient.Transport
+	}
 
 	client, err := torrent.NewClient(cfg)
 	if err != nil {
@@ -65,7 +70,7 @@ func New(filePath string, announceList [][]string) (*Seeder, error) {
 	<-t.GotInfo()
 	t.DisallowDataDownload()
 
-	return &Seeder{client: client, magnetURI: magnetURI}, nil
+	return &Seeder{client: client, dataDir: path, magnetURI: magnetURI}, nil
 }
 
 // MagnetURI returns the magnet URI for the seeded file.
@@ -78,7 +83,8 @@ func (s *Seeder) Close() error {
 	if errs := s.client.Close(); len(errs) > 0 {
 		return fmt.Errorf("closing torrent client: %w", errors.Join(errs...))
 	}
-	return nil
+
+	return os.RemoveAll(s.dataDir)
 }
 
 // buildMetainfo creates a MetaInfo for the file at filePath.

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"net/http"
 	"testing"
 
 	events "github.com/anacrolix/chansync/events"
@@ -16,11 +17,12 @@ import (
 func TestMagnetDownloadWASM(t *testing.T) {
 	ctx := context.Background()
 	var tests = []struct {
-		name           string
-		setup          func(ctrl *gomock.Controller, downloader *magnetDownloader) WASMDownloader
-		givenCtx       context.Context
-		givenMagnetURL string
-		assert         func(t *testing.T, r io.Reader, err error)
+		name            string
+		setup           func(ctrl *gomock.Controller, downloader *magnetDownloader) WASMDownloader
+		givenCtx        context.Context
+		givenHTTPClient *http.Client
+		givenMagnetURL  string
+		assert          func(t *testing.T, r io.Reader, err error)
 	}{
 		{
 			name: "should return success when download is successful",
@@ -51,8 +53,9 @@ func TestMagnetDownloadWASM(t *testing.T) {
 				downloader.client = torrentClient
 				return downloader
 			},
-			givenCtx:       ctx,
-			givenMagnetURL: "",
+			givenCtx:        ctx,
+			givenHTTPClient: http.DefaultClient,
+			givenMagnetURL:  "",
 			assert: func(t *testing.T, r io.Reader, err error) {
 				assert.NoError(t, err)
 			},
@@ -60,7 +63,7 @@ func TestMagnetDownloadWASM(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			downloader, err := newMagnetDownloader(tt.givenCtx, tt.givenMagnetURL)
+			downloader, err := newMagnetDownloader(tt.givenCtx, tt.givenHTTPClient, tt.givenMagnetURL)
 			require.NoError(t, err)
 			defer downloader.Close()
 			if tt.setup != nil {

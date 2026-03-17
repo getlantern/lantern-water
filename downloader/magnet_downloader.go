@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/http"
 	"os"
 
 	"github.com/anacrolix/chansync/events"
@@ -18,8 +19,8 @@ type magnetDownloader struct {
 }
 
 // newWaterMagnetDownloader creates a new WASMDownloader instance.
-func newMagnetDownloader(ctx context.Context, magnetURL string) (WASMDownloader, error) {
-	cfg, err := generateTorrentClientConfig(ctx)
+func newMagnetDownloader(ctx context.Context, httpClient *http.Client, magnetURL string) (WASMDownloader, error) {
+	cfg, err := generateTorrentClientConfig(ctx, httpClient)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +87,7 @@ func dialContext(ctx context.Context, network, addr string) (net.Conn, error) {
 	}
 }
 
-func generateTorrentClientConfig(ctx context.Context) (*torrent.ClientConfig, error) {
+func generateTorrentClientConfig(ctx context.Context, httpClient *http.Client) (*torrent.ClientConfig, error) {
 	cfg := torrent.NewDefaultClientConfig()
 	path, err := os.MkdirTemp("", "lantern-water-module")
 	if err != nil {
@@ -95,6 +96,9 @@ func generateTorrentClientConfig(ctx context.Context) (*torrent.ClientConfig, er
 	cfg.DataDir = path
 	cfg.HTTPDialContext = dialContext
 	cfg.TrackerDialContext = dialContext
+	if httpClient != nil && httpClient.Transport != nil {
+		cfg.WebTransport = httpClient.Transport
+	}
 	return cfg, nil
 }
 
