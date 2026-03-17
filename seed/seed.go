@@ -5,6 +5,7 @@ package seed
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 
@@ -25,7 +26,7 @@ type Seeder struct {
 // returns the Seeder alongside the generated magnet URI.
 // It uses the default options from anacrolix/torrent config and make sure
 // it enables seed options based on the announce list and enable DHT
-func New(filePath string, announceList [][]string) (*Seeder, error) {
+func New(filePath string, announceList [][]string, httpClient *http.Client) (*Seeder, error) {
 	mi, err := buildMetainfo(filePath, announceList)
 	if err != nil {
 		return nil, fmt.Errorf("building metainfo: %w", err)
@@ -47,6 +48,9 @@ func New(filePath string, announceList [][]string) (*Seeder, error) {
 	cfg.NoDHT = false
 	cfg.NoUpload = false
 	cfg.AcceptPeerConnections = true
+	if httpClient != nil {
+		cfg.WebTransport = httpClient.Transport
+	}
 
 	client, err := torrent.NewClient(cfg)
 	if err != nil {
