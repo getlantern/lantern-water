@@ -19,6 +19,7 @@ const defaultPieceLength = 256 * 1024 // 256 KiB
 // Seeder seeds a WASM file via BitTorrent.
 type Seeder struct {
 	client    *torrent.Client
+	dataDir   string
 	magnetURI string
 }
 
@@ -69,7 +70,7 @@ func New(filePath string, announceList [][]string, httpClient *http.Client) (*Se
 	<-t.GotInfo()
 	t.DisallowDataDownload()
 
-	return &Seeder{client: client, magnetURI: magnetURI}, nil
+	return &Seeder{client: client, dataDir: path, magnetURI: magnetURI}, nil
 }
 
 // MagnetURI returns the magnet URI for the seeded file.
@@ -82,7 +83,8 @@ func (s *Seeder) Close() error {
 	if errs := s.client.Close(); len(errs) > 0 {
 		return fmt.Errorf("closing torrent client: %w", errors.Join(errs...))
 	}
-	return nil
+
+	return os.RemoveAll(s.dataDir)
 }
 
 // buildMetainfo creates a MetaInfo for the file at filePath.
