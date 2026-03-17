@@ -13,7 +13,7 @@ import (
 	"strings"
 )
 
-//go:generate mockgen -package=downloader -destination=mocks_test.go . WASMDownloader,torrentClient,torrentInfo
+//go:generate mockgen -package=downloader -destination=mocks.go . WASMDownloader,torrentClient,torrentInfo
 //go:generate mockgen -package=downloader -destination=torrent_reader_mock_test.go github.com/anacrolix/torrent Reader
 
 // WASMDownloader is an interface that defines the methods that a WASM downloader
@@ -79,7 +79,7 @@ func (d *downloader) downloadWASM(ctx context.Context, w io.Writer, url string) 
 	case strings.HasPrefix(url, "http://"), strings.HasPrefix(url, "https://"):
 		return newHTTPSDownloader(d.httpClient, url).DownloadWASM(ctx, w)
 	case strings.HasPrefix(url, "magnet:?"):
-		downloader, err := newMagnetDownloader(ctx, url)
+		downloader, err := newMagnetDownloader(ctx, d.httpClient, url)
 		if err != nil {
 			return err
 		}
