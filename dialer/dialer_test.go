@@ -5,10 +5,11 @@ import (
 	"context"
 	"embed"
 	"io"
+	"log/slog"
 	"net"
+	"os"
 	"testing"
 
-	"github.com/getlantern/golog"
 	"github.com/getlantern/lantern-water/listener"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -27,8 +28,10 @@ func TestNewDialer(t *testing.T) {
 	wasm, err := io.ReadAll(f)
 	require.Nil(t, err)
 
+	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
 	listenerParameters := listener.ListenerParams{
-		Logger:    golog.LoggerFor("water_listener"),
+		Logger:    log,
 		Transport: "reverse_v1",
 		Address:   "127.0.0.1:3000",
 		WASM:      wasm,
@@ -72,7 +75,7 @@ func TestNewDialer(t *testing.T) {
 	}()
 
 	dialer, err := NewDialer(ctx, DialerParameters{
-		Logger:    golog.LoggerFor("water_dialer"),
+		Logger:    log,
 		Transport: "reverse_v1",
 		WASM:      wasm,
 	})

@@ -6,8 +6,6 @@ import (
 	"log/slog"
 	"net"
 
-	"github.com/getlantern/golog"
-	"github.com/getlantern/lantern-water/logger"
 	"github.com/refraction-networking/water"
 	_ "github.com/refraction-networking/water/transport/v1"
 )
@@ -16,10 +14,9 @@ import (
 type ListenerParams struct {
 	// BaseListener is a listener that should be wrapped by the WATER listener, it's optional and can be nil
 	BaseListener net.Listener
-	// An optional golog.Logger used for keeping compatibility with http-proxy
-	// and flashlight logger. If not defined the dialer will use the default
+	// An optional *slog.Logger. If not defined the listener will use the default
 	// water logger.
-	Logger golog.Logger
+	Logger *slog.Logger
 	// Transport represents the protocol, version or whatever detail that will
 	// be used at local logs to help understanding which WASM file is being used
 	Transport string
@@ -37,7 +34,7 @@ func NewWATERListener(ctx context.Context, params ListenerParams) (net.Listener,
 	}
 
 	if params.Logger != nil {
-		cfg.OverrideLogger = slog.New(logger.NewLogHandler(params.Logger, params.Transport))
+		cfg.OverrideLogger = params.Logger
 	}
 
 	if params.BaseListener != nil {

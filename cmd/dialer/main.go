@@ -10,10 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/getlantern/golog"
 	"github.com/getlantern/lantern-water/dialer"
 	waterDownloader "github.com/getlantern/lantern-water/downloader"
-	"github.com/getlantern/lantern-water/logger"
 	waterVC "github.com/getlantern/lantern-water/version_control"
 
 	_ "github.com/refraction-networking/water/transport/v1"
@@ -32,11 +30,11 @@ func main() {
 
 	storageDir, err := os.MkdirTemp("", "lantern-water-example")
 	if err != nil {
-		log.Error("failed to create storage dir", slog.Any("err", err))
+		log.Error("failed to create storage dir", "err", err)
 		return
 	}
 
-	vc := waterVC.NewWaterVersionControl(storageDir, slog.New(logger.NewLogHandler(golog.LoggerFor("water-vc"), transportName)))
+	vc := waterVC.NewWaterVersionControl(storageDir, log)
 
 	// Client for downloading WASM file
 	cli := &http.Client{
@@ -44,45 +42,45 @@ func main() {
 	}
 	downloader, err := waterDownloader.NewWASMDownloader(hashsum, strings.Split(wasmAvailableAt, ","), cli)
 	if err != nil {
-		log.Error("failed to create wasm downloader", slog.Any("err", err))
+		log.Error("failed to create wasm downloader", "err", err)
 		return
 	}
 	wasmRC, err := vc.GetWASM(ctx, transportName, downloader)
 	if err != nil {
-		log.Error("failed to retrieve WASM", slog.Any("err", err))
+		log.Error("failed to retrieve WASM", "err", err)
 		return
 	}
 	defer wasmRC.Close()
 
 	wasm, err := io.ReadAll(wasmRC)
 	if err != nil {
-		log.Error("failed to read WASM", slog.Any("err", err))
+		log.Error("failed to read WASM", "err", err)
 		return
 	}
 
 	dialer, err := dialer.NewDialer(ctx, dialer.DialerParameters{Transport: transportName, WASM: wasm})
 	if err != nil {
-		log.Error("failed to create dialer", slog.Any("err", err))
+		log.Error("failed to create dialer", "err", err)
 		return
 	}
 
 	conn, err := dialer.DialContext(ctx, "tcp", listenerAddr)
 	if err != nil {
-		log.Error("failed to dial", slog.Any("err", err))
+		log.Error("failed to dial", "err", err)
 		return
 	}
 	defer conn.Close()
 	_, err = conn.Write([]byte("Hello world!"))
 	if err != nil {
-		log.Error("failed to write", slog.Any("err", err))
+		log.Error("failed to write", "err", err)
 		return
 	}
 
 	buf := make([]byte, 1024)
 	n, err := conn.Read(buf)
 	if err != nil {
-		log.Error("failed to read", slog.Any("err", err))
+		log.Error("failed to read", "err", err)
 		return
 	}
-	log.Info("received", slog.Any("data", string(buf[:n])))
+	log.Info("received", "data", string(buf[:n]))
 }

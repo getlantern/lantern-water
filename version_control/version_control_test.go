@@ -10,9 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/getlantern/golog"
 	"github.com/getlantern/lantern-water/downloader"
-	"github.com/getlantern/lantern-water/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	gomock "go.uber.org/mock/gomock"
@@ -115,7 +113,8 @@ func TestNewWaterVersionControl(t *testing.T) {
 			transport := "test"
 
 			downloader := tt.setup(t, gomock.NewController(t), dir)
-			vc := NewWaterVersionControl(dir, slog.New(logger.NewLogHandler(golog.LoggerFor("version_control_test"), transport)))
+			log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+			vc := NewWaterVersionControl(dir, log)
 			require.NotNil(t, vc)
 			require.NotEmpty(t, vc.dir)
 
