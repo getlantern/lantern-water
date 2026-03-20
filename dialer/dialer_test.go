@@ -7,7 +7,6 @@ import (
 	"io"
 	"log/slog"
 	"net"
-	"os"
 	"testing"
 
 	"github.com/getlantern/lantern-water/listener"
@@ -28,7 +27,7 @@ func TestNewDialer(t *testing.T) {
 	wasm, err := io.ReadAll(f)
 	require.Nil(t, err)
 
-	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 
 	listenerParameters := listener.ListenerParams{
 		Logger:    log,

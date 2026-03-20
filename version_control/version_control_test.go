@@ -113,7 +113,7 @@ func TestNewWaterVersionControl(t *testing.T) {
 			transport := "test"
 
 			downloader := tt.setup(t, gomock.NewController(t), dir)
-			log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+			log := slog.New(slog.NewTextHandler(io.Discard, nil))
 			vc := NewWaterVersionControl(dir, log)
 			require.NotNil(t, vc)
 			require.NotEmpty(t, vc.dir)

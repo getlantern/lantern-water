@@ -25,7 +25,7 @@ func NewDialer(ctx context.Context, params DialerParameters) (water.Dialer, erro
 	}
 
 	if params.Logger != nil {
-		cfg.OverrideLogger = params.Logger
+		cfg.OverrideLogger = params.Logger.With("transport", params.Transport)
 	}
 
 	dialer, err := water.NewDialerWithContext(ctx, cfg)

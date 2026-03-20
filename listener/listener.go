@@ -34,7 +34,11 @@ func NewWATERListener(ctx context.Context, params ListenerParams) (net.Listener,
 	}
 
 	if params.Logger != nil {
-		cfg.OverrideLogger = params.Logger
+		logger := params.Logger
+		if params.Transport != "" {
+			logger = logger.With("transport", params.Transport)
+		}
+		cfg.OverrideLogger = logger
 	}
 
 	if params.BaseListener != nil {

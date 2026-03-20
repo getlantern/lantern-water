@@ -147,12 +147,12 @@ func (vc *waterVersionControl) cleanOutdated() error {
 		go func() {
 			defer wg.Done()
 			transport := strings.TrimSuffix(filepath.Base(path), ".last-loaded")
-			if err = os.Remove(filepath.Join(vc.dir, transport+".wasm")); err != nil {
-				vc.logger.Error("failed to remove wasm file", "file", transport+".wasm", "err", err)
+			if removeErr := os.Remove(filepath.Join(vc.dir, transport+".wasm")); removeErr != nil {
+				vc.logger.Error("failed to remove wasm file", "file", transport+".wasm", "err", removeErr)
 				return
 			}
-			if err = os.Remove(path); err != nil {
-				vc.logger.Error("failed to remove last-loaded file", "path", path, "err", err)
+			if removeErr := os.Remove(path); removeErr != nil {
+				vc.logger.Error("failed to remove last-loaded file", "path", path, "err", removeErr)
 				return
 			}
 		}()

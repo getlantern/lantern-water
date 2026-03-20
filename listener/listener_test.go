@@ -7,7 +7,6 @@ import (
 	"io"
 	"log/slog"
 	"net"
-	"os"
 	"testing"
 
 	"github.com/refraction-networking/water"
@@ -33,7 +32,7 @@ func TestWATERListener(t *testing.T) {
 		TransportModuleBin: wasm,
 	}
 
-	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 
 	listenerParameters := ListenerParams{
 		Logger:    log,

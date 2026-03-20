@@ -34,7 +34,8 @@ func main() {
 		return
 	}
 
-	vc := waterVC.NewWaterVersionControl(storageDir, log)
+	vcLog := log.With("transport", transportName)
+	vc := waterVC.NewWaterVersionControl(storageDir, vcLog)
 
 	// Client for downloading WASM file
 	cli := &http.Client{
