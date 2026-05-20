@@ -48,7 +48,9 @@ func New(filePath string, announceList [][]string, httpClient *http.Client) (*Se
 	cfg.Seed = true
 	cfg.NoDHT = false
 	cfg.NoUpload = false
+	cfg.PeriodicallyAnnounceTorrentsToDht = true
 	cfg.AcceptPeerConnections = true
+	applyPlatformConfig(cfg)
 	if httpClient != nil {
 		cfg.WebTransport = httpClient.Transport
 	}
