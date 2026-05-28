@@ -5,10 +5,10 @@ import (
 	"context"
 	"embed"
 	"io"
+	"log/slog"
 	"net"
 	"testing"
 
-	"github.com/getlantern/golog"
 	"github.com/refraction-networking/water"
 	_ "github.com/refraction-networking/water/transport/v1"
 	"github.com/stretchr/testify/assert"
@@ -32,8 +32,10 @@ func TestWATERListener(t *testing.T) {
 		TransportModuleBin: wasm,
 	}
 
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+
 	listenerParameters := ListenerParams{
-		Logger:    golog.LoggerFor("water"),
+		Logger:    log,
 		Transport: "reverse_v1",
 		Address:   "127.0.0.1:3000",
 		WASM:      wasm,
